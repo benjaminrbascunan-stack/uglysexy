@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>UGLY SEXY</title>
   <meta property="og:title" content="UGLY SEXY">
   <meta property="og:image" content="https://uglysexy.com/og.png">
@@ -15,7 +15,8 @@
     html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
       font: 500 13px/1.4 ui-monospace, "SF Mono", Menlo, monospace; }
     body { display: flex; align-items: center; justify-content: center; overflow: hidden; }
-    button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+    button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer;
+      -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
     a { color: inherit; }
 
     /* Entrada: negro que se va a blanco, y aparece el logo */
@@ -25,14 +26,16 @@
 
     #logo { display: block; opacity: 0; animation: appear 1.8s ease 1.6s forwards; }
     #logo img { width: min(420px, 70vw); height: auto; display: block; transition: transform .25s ease; }
-    #logo:hover img { transform: scale(1.03); }
+    @media (hover: hover) { #logo:hover img { transform: scale(1.03); } }
     @keyframes appear { to { opacity: 1; } }
 
     /* Menú superior (aparece al dar play) */
-    nav { position: fixed; top: 0; left: 0; right: 0; z-index: 30; padding: 18px 20px;
+    nav { position: fixed; top: 0; left: 0; right: 0; z-index: 30;
+      padding: calc(10px + env(safe-area-inset-top)) 12px 10px;
       display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
       font-size: 17px; letter-spacing: .25em; opacity: 0; filter: blur(10px); pointer-events: none;
       transition: opacity 1.8s ease, filter 1.8s ease; }
+    nav button { padding: 8px; }  /* área de toque más grande */
     nav button:nth-child(1) { justify-self: start; }
     nav button:nth-child(3) { justify-self: end; }
     nav button[aria-pressed="true"] { text-decoration: underline; text-underline-offset: 5px; }
@@ -50,21 +53,21 @@
     .panel a { text-decoration: none; border-bottom: 1px solid currentColor; }
 
     /* Reproductor */
-    #player { position: fixed; left: 50%; bottom: 24px; z-index: 30; transform: translate(-50%, 160%);
+    #player { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom)); z-index: 30; transform: translate(-50%, 160%);
       width: min(380px, calc(100vw - 32px)); height: 44px; padding: 0 16px; gap: 12px;
       display: flex; align-items: center;
       transition: transform .5s ease; }
     body.started #player { transform: translate(-50%, 0); }
     #toggle svg { width: 14px; display: block; }
     #time { white-space: nowrap; font-variant-numeric: tabular-nums; font-size: 11px; }
-    #bar { flex: 1; height: 16px; display: flex; align-items: center; cursor: pointer; }
+    #bar { flex: 1; height: 32px; display: flex; align-items: center; cursor: pointer; }
     #bar div { height: 3px; width: 100%; background: #ccc; border-radius: 2px; overflow: hidden; }
     #bar span { display: block; height: 100%; width: 0; background: var(--ink); }
     #vol { width: 56px; accent-color: var(--ink); }
-    @media (max-width: 420px) { #vol { display: none; } nav { font-size: 14px; letter-spacing: .15em; padding: 16px; } }
+    @media (max-width: 420px) { #vol { display: none; } .panel .big { font-size: 18px; letter-spacing: .2em; } nav { font-size: 14px; letter-spacing: .15em; padding-left: 8px; padding-right: 8px; } }
 
     /* Si el navegador bloquea el play (iPhone a veces), mostramos el reproductor de Mixcloud */
-    #mc { position: fixed; left: 50%; bottom: 80px; z-index: 30; transform: translateX(-50%);
+    #mc { position: fixed; left: 50%; bottom: calc(76px + env(safe-area-inset-bottom)); z-index: 30; transform: translateX(-50%);
       width: min(380px, calc(100vw - 32px)); height: 60px; border: 0;
       opacity: 0; pointer-events: none; }
     #mc.fallback { opacity: 1; pointer-events: auto; }

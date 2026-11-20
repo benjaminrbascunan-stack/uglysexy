@@ -46,11 +46,16 @@
     body.started nav { opacity: 1; filter: blur(0); pointer-events: auto; }
 
     /* Secciones: pantalla blanca con el contenido al centro */
-    .panel { position: fixed; inset: 0; z-index: 20; background: var(--bg);
+    /* Un solo fondo blanco detrás de todas las secciones: al cambiar de una a otra el logo no se asoma */
+    #veil { position: fixed; inset: 0; z-index: 19; background: var(--bg); pointer-events: none;
+      opacity: 0; transition: opacity .5s ease; }
+    body.panel-open #veil { opacity: 1; }
+    .panel { position: fixed; inset: 0; z-index: 20; background: transparent;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       gap: 10px; padding: 80px 16px; text-align: center; letter-spacing: .2em;
-      opacity: 0; visibility: hidden; transition: opacity .35s ease, visibility .35s; }
-    .panel.open { opacity: 1; visibility: visible; }
+      opacity: 0; visibility: hidden; filter: blur(8px);
+      transition: opacity .6s ease, filter .6s ease, visibility .6s; }
+    .panel.open { opacity: 1; visibility: visible; filter: blur(0); }
     .panel .big { font-size: 30px; letter-spacing: .3em; }
     .panel .label { font-size: 15px; opacity: .5; margin-top: 18px; }
     .panel .label:first-child { margin-top: 0; }
@@ -111,6 +116,8 @@
   </nav>
 
   <button id="logo" aria-label="Reproducir el mix"><img src="logo.svg" alt="UGS — ugly sexy"></button>
+
+  <div id="veil"></div>
 
   <section class="panel" id="tienda">
     <p class="big">pronto</p>
@@ -218,6 +225,7 @@
       document.querySelectorAll(".panel").forEach((p) => p.classList.toggle("open", p.id === id));
       navBtns.forEach((b) => b.setAttribute("aria-pressed", b.dataset.panel === id));
       document.body.classList.toggle("info-open", id === "info");
+      document.body.classList.toggle("panel-open", !!id);
     };
     navBtns.forEach((b) => b.onclick = () => openPanel(b.getAttribute("aria-pressed") === "true" ? null : b.dataset.panel));
     document.querySelectorAll(".panel").forEach((p) => p.onclick = (e) => { if (!e.target.closest("a")) openPanel(null); });

@@ -171,7 +171,7 @@
     const iframe = $("mc");
     iframe.src = "https://player-widget.mixcloud.com/widget/iframe/?hide_cover=1&mini=1&light=1&hide_artwork=1&disable_unload_warning=1&feed=" + encodeURIComponent(MIX);
     const w = Mixcloud.PlayerWidget(iframe);
-    let ready = false, wantPlay = false, duration = 0, playing = false;
+    let ready = false, wantPlay = false, duration = 0, playing = false, alive = false;
 
     const setIcon = () => {
       $("toggle").innerHTML = playing ? ICON_PAUSE : ICON_PLAY;
@@ -184,17 +184,21 @@
       $("logo").ariaLabel = "Ver fotos e info del proyecto";
       if (!ready) { wantPlay = true; return; }   // aún cargando: parte apenas esté listo
       w.play();
-      setTimeout(() => { if (!playing) iframe.classList.add("fallback"); }, 2500);
+      // Respaldo solo si Mixcloud no da ninguna señal (bloqueado, típico de iPhone)
+      setTimeout(() => { if (!alive) iframe.classList.add("fallback"); }, 6000);
     };
 
     w.ready.then(() => {
       ready = true;
       w.getDuration().then((d) => { duration = d; $("time").textContent = `0:00 / ${fmt(d)}`; });
       if (typeof w.setVolume !== "function") $("vol").remove();
-      w.events.play.on(() => { playing = true; setIcon(); iframe.classList.remove("fallback"); });
+      const hideFallback = () => { alive = true; iframe.classList.remove("fallback"); };
+      w.events.play.on(() => { playing = true; setIcon(); hideFallback(); });
+      w.events.buffering.on(hideFallback);
       w.events.pause.on(() => { playing = false; setIcon(); });
       w.events.ended.on(() => { playing = false; setIcon(); });
       w.events.progress.on((pos, dur) => {
+        if (pos > 0) hideFallback();
         if (dur) duration = dur;
         if (!duration) return;
         $("time").textContent = `${fmt(pos)} / ${fmt(duration)}`;

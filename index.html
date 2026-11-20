@@ -56,6 +56,28 @@
     .panel .label:first-child { margin-top: 0; }
     .panel a { text-decoration: none; border-bottom: 1px solid currentColor; }
 
+    /* Proyecto: segundo click en el logo. Pantalla blanca con scroll: foto, texto, foto */
+    #info { justify-content: flex-start; overflow-y: auto; -webkit-overflow-scrolling: touch;
+      padding: calc(84px + env(safe-area-inset-top)) 16px calc(110px + env(safe-area-inset-bottom));
+      gap: 0; letter-spacing: normal; }
+    #info .wrap { width: min(640px, 100%); display: flex; flex-direction: column; align-items: center; gap: 56px; }
+    #info .back img { width: 120px; display: block; }
+    #info .foto { width: 100%; margin: 0; }
+    #info .foto img { width: 100%; height: auto; display: block; }
+    #info .foto figcaption { margin-top: 10px; font-size: 14px; opacity: .5; letter-spacing: .1em; }
+    #info .texto { max-width: 34em; font-size: 20px; line-height: 1.55; margin: 0; }
+    #info .quienes { font-size: 15px; letter-spacing: .25em; opacity: .6; margin: -32px 0 0; }
+    #info .foto, #info .texto { opacity: 0; transform: translateY(14px); transition: opacity .9s ease, transform .9s ease; }
+    #info.open .foto, #info.open .texto { opacity: 1; transform: none; }
+    #info.open .texto { transition-delay: .15s; }
+    /* Degradado blanco bajo el menú y el reproductor para que las fotos no se mezclen con ellos */
+    nav { transition: opacity 1.8s ease, filter 1.8s ease, background .4s ease; }
+    body.info-open nav { background: linear-gradient(var(--bg) 70%, rgba(255,255,255,0)); }
+    body::after { content: ""; position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; pointer-events: none;
+      height: calc(100px + env(safe-area-inset-bottom)); background: linear-gradient(rgba(255,255,255,0), var(--bg) 55%);
+      opacity: 0; transition: opacity .4s ease; }
+    body.info-open::after { opacity: 1; }
+
     /* Reproductor */
     #player { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom)); z-index: 30; transform: translate(-50%, 160%);
       width: min(380px, calc(100vw - 32px)); height: 44px; padding: 0 16px; gap: 12px;
@@ -105,6 +127,17 @@
     <p><a href="https://www.instagram.com/uglysexyfanpage/" target="_blank" rel="noopener">@uglysexyfanpage</a></p>
   </section>
 
+  <section class="panel" id="info" aria-label="Proyecto">
+    <div class="wrap">
+      <button class="back" aria-label="Volver"><img src="logo.svg" alt=""></button>
+      <figure class="foto"><img src="fotos/01.jpg" alt="Juan y Benja saltando en una pieza" width="1600" height="1066"></figure>
+      <p class="texto">Ugly Sexy es un dúo DJ de Santiago que arma sus sets con canciones memorables: clásicos que vuelven, temas nuevos que ya suenan a clásico y transiciones que nadie ve venir. Sin género fijo y sin tomarse tan en serio.</p>
+      <p class="quienes">juan + benja</p>
+      <figure class="foto"><img src="fotos/02.jpg" alt="Juan y Benja sentados en el suelo" width="1600" height="1066" loading="lazy">
+        <figcaption>fotos: <a href="https://www.instagram.com/octavioskiaffos/" target="_blank" rel="noopener">@octavioskiaffos</a></figcaption></figure>
+    </div>
+  </section>
+
   <div id="player" aria-label="Reproductor">
     <button id="toggle" aria-label="Play"></button>
     <span id="time">0:00 / 0:00</span>
@@ -132,12 +165,13 @@
 
     const setIcon = () => {
       $("toggle").innerHTML = playing ? ICON_PAUSE : ICON_PLAY;
-      $("toggle").ariaLabel = $("logo").ariaLabel = playing ? "Pausar el mix" : "Reproducir el mix";
+      $("toggle").ariaLabel = playing ? "Pausar el mix" : "Reproducir el mix";
     };
     setIcon();
 
     const start = () => {
       document.body.classList.add("started");
+      $("logo").ariaLabel = "Ver fotos e info del proyecto";
       if (!ready) { wantPlay = true; return; }   // aún cargando: parte apenas esté listo
       w.play();
       setTimeout(() => { if (!playing) iframe.classList.add("fallback"); }, 2500);
@@ -159,8 +193,7 @@
       if (wantPlay) start();
     });
 
-    // Logo: el primer click pone la música; después pausa / reanuda
-    $("logo").onclick = () => document.body.classList.contains("started") && ready ? w.togglePlay() : start();
+    // Logo: el primer click pone la música; el segundo abre las fotos e info del proyecto
     $("toggle").onclick = () => ready && w.togglePlay();
     $("bar").onclick = (e) => { if (!duration) return; const r = e.currentTarget.getBoundingClientRect(); w.seek((e.clientX - r.left) / r.width * duration); };
     $("vol").oninput = (e) => w.setVolume && w.setVolume(e.target.value / 100);
@@ -170,10 +203,18 @@
     const openPanel = (id) => {
       document.querySelectorAll(".panel").forEach((p) => p.classList.toggle("open", p.id === id));
       navBtns.forEach((b) => b.setAttribute("aria-pressed", b.dataset.panel === id));
+      document.body.classList.toggle("info-open", id === "info");
     };
     navBtns.forEach((b) => b.onclick = () => openPanel(b.getAttribute("aria-pressed") === "true" ? null : b.dataset.panel));
     document.querySelectorAll(".panel").forEach((p) => p.onclick = (e) => { if (!e.target.closest("a")) openPanel(null); });
     document.addEventListener("keydown", (e) => { if (e.key === "Escape") openPanel(null); });
+    $("logo").onclick = () => {
+      if (!document.body.classList.contains("started")) return start();
+      $("info").scrollTop = 0;
+      openPanel("info");
+    };
+    // En proyecto se puede hacer scroll y tocar texto/fotos sin cerrar; se vuelve con el logo chico o el menú
+    $("info").onclick = (e) => { e.stopPropagation(); if (e.target.closest(".back")) openPanel(null); };
   </script>
 </body>
 </html>

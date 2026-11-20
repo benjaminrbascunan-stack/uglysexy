@@ -11,12 +11,12 @@
   <link rel="icon" href="logo.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Tinos:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
   <style>
     :root { --ink: #111; --bg: #fff; --soft: #f2f2f2; }
     * { box-sizing: border-box; }
     html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
-      font: 400 15px/1.4 "Tinos", "Times New Roman", serif; }
+      font: 500 17px/1.4 "Cormorant Garamond", Garamond, "Times New Roman", serif; }
     body { display: flex; align-items: center; justify-content: center; overflow: hidden; }
     button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer;
       -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
@@ -37,7 +37,7 @@
       padding: calc(10px + env(safe-area-inset-top)) 12px 10px;
       display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
       column-gap: clamp(16px, 20vw - 34px, 240px);  /* mismo espacio a cada lado de fechas */
-      font-size: 19px; letter-spacing: .2em; opacity: 0; filter: blur(10px); pointer-events: none;
+      font-size: 21px; letter-spacing: .2em; opacity: 0; filter: blur(10px); pointer-events: none;
       transition: opacity 1.8s ease, filter 1.8s ease; }
     nav button { padding: 8px; }  /* área de toque más grande */
     nav button:nth-child(1) { justify-self: end; }
@@ -51,8 +51,8 @@
       gap: 10px; padding: 80px 16px; text-align: center; letter-spacing: .2em;
       opacity: 0; visibility: hidden; transition: opacity .35s ease, visibility .35s; }
     .panel.open { opacity: 1; visibility: visible; }
-    .panel .big { font-size: 26px; letter-spacing: .3em; }
-    .panel .label { font-size: 13px; opacity: .5; margin-top: 18px; }
+    .panel .big { font-size: 30px; letter-spacing: .3em; }
+    .panel .label { font-size: 15px; opacity: .5; margin-top: 18px; }
     .panel .label:first-child { margin-top: 0; }
     .panel a { text-decoration: none; border-bottom: 1px solid currentColor; }
 
@@ -63,12 +63,12 @@
       transition: transform .5s ease; }
     body.started #player { transform: translate(-50%, 0); }
     #toggle svg { width: 14px; display: block; }
-    #time { white-space: nowrap; font-variant-numeric: tabular-nums; font-size: 13px; }
+    #time { white-space: nowrap; font-variant-numeric: tabular-nums lining-nums; font-size: 15px; }
     #bar { flex: 1; height: 32px; display: flex; align-items: center; cursor: pointer; }
     #bar div { height: 3px; width: 100%; background: #ccc; border-radius: 2px; overflow: hidden; }
     #bar span { display: block; height: 100%; width: 0; background: var(--ink); }
     #vol { width: 56px; accent-color: var(--ink); }
-    @media (max-width: 420px) { #vol { display: none; } .panel .big { font-size: 18px; letter-spacing: .2em; } nav { font-size: 15px; letter-spacing: .15em; padding-left: 8px; padding-right: 8px; } nav button { padding: 8px 6px; } }
+    @media (max-width: 420px) { #vol { display: none; } .panel .big { font-size: 22px; letter-spacing: .2em; } nav { font-size: 17px; letter-spacing: .15em; padding-left: 8px; padding-right: 8px; } nav button { padding: 8px 6px; } }
 
     /* Si el navegador bloquea el play (iPhone a veces), mostramos el reproductor de Mixcloud */
     #mc { position: fixed; left: 50%; bottom: calc(76px + env(safe-area-inset-bottom)); z-index: 30; transform: translateX(-50%);

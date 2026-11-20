@@ -11,12 +11,119 @@
   <meta property="og:url" content="https://uglysexy.com">
   <link rel="icon" href="logo.svg" type="image/svg+xml">
   <style>
-    html, body { margin: 0; height: 100%; background: #fff; }
-    body { display: flex; align-items: center; justify-content: center; }
-    img { width: min(420px, 70vw); height: auto; display: block; }
+    :root { --ink: #111; --bg: #fff; --soft: #f2f2f2; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
+      font: 500 13px/1 ui-monospace, "SF Mono", Menlo, monospace; }
+    body { display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+
+    .logo { width: min(420px, 70vw); height: auto; display: block; }
+
+    /* Pantalla inicial */
+    main, #intro { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 48px; }
+    .spacer { visibility: hidden; }
+    #intro { position: fixed; inset: 0; z-index: 10; background: var(--bg); transition: opacity .5s ease; }
+    #intro.hide { opacity: 0; pointer-events: none; }
+    #start, .spacer { display: flex; flex-direction: column; align-items: center; gap: 16px; letter-spacing: .3em; }
+    #start .ring, .spacer .ring { width: 88px; height: 88px; border: 3px solid var(--ink); border-radius: 50%;
+      display: grid; place-items: center; transition: transform .2s ease; }
+    #start:hover .ring { transform: scale(1.06); }
+    #start:disabled { opacity: .35; cursor: wait; }
+    #start svg { width: 30px; margin-left: 6px; }
+
+    /* Reproductor */
+    #player { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 160%);
+      width: min(380px, calc(100vw - 32px)); height: 44px; padding: 0 16px; gap: 12px;
+      display: flex; align-items: center; background: var(--soft); border-radius: 999px;
+      transition: transform .5s ease; }
+    #player.show { transform: translate(-50%, 0); }
+    #toggle svg { width: 14px; display: block; }
+    #time { white-space: nowrap; font-variant-numeric: tabular-nums; font-size: 11px; }
+    #bar { flex: 1; height: 16px; display: flex; align-items: center; cursor: pointer; }
+    #bar div { height: 3px; width: 100%; background: #ccc; border-radius: 2px; overflow: hidden; }
+    #bar span { display: block; height: 100%; width: 0; background: var(--ink); }
+    #vol { width: 56px; accent-color: var(--ink); }
+    @media (max-width: 420px) { #vol { display: none; } }
+
+    /* Si el navegador bloquea el play (iPhone a veces), mostramos el reproductor de Mixcloud */
+    #mc { position: fixed; left: 50%; bottom: 80px; transform: translateX(-50%);
+      width: min(380px, calc(100vw - 32px)); height: 60px; border: 0;
+      opacity: 0; pointer-events: none; }
+    #mc.fallback { opacity: 1; pointer-events: auto; }
   </style>
 </head>
 <body>
-  <img src="logo.svg" alt="UGS — ugly sexy">
+  <main>
+    <img class="logo" src="logo.svg" alt="UGS — ugly sexy">
+    <!-- espaciador: mismo alto que el botón de inicio, para que el logo no salte -->
+    <div class="spacer" aria-hidden="true"><span class="ring"></span>click to start</div>
+  </main>
+
+  <div id="intro">
+    <img class="logo" src="logo.svg" alt="">
+    <button id="start" aria-label="Reproducir el mix">
+      <span class="ring"><svg viewBox="0 0 24 28"><path d="M0 0 24 14 0 28z" fill="currentColor"/></svg></span>
+      click to start
+    </button>
+  </div>
+
+  <div id="player" aria-label="Reproductor">
+    <button id="toggle" aria-label="Pausa"></button>
+    <span id="time">0:00 / 0:00</span>
+    <div id="bar" role="slider" aria-label="Avance"><div><span></span></div></div>
+    <input id="vol" type="range" min="0" max="100" value="100" aria-label="Volumen">
+  </div>
+
+  <iframe id="mc" allow="autoplay; encrypted-media" title="Mix en Mixcloud"></iframe>
+
+  <script src="https://widget.mixcloud.com/media/js/widgetApi.js"></script>
+  <script>
+    // ⬇️ Mix en Mixcloud (la parte después de mixcloud.com)
+    const MIX = "/uglysexy/duum-release-house-party/";
+
+    const $ = (id) => document.getElementById(id);
+    const ICON_PLAY = '<svg viewBox="0 0 24 28"><path d="M0 0 24 14 0 28z" fill="currentColor"/></svg>';
+    const ICON_PAUSE = '<svg viewBox="0 0 24 28"><path d="M0 0h8v28H0zM16 0h8v28h-8z" fill="currentColor"/></svg>';
+    const fmt = (sec) => { const s = Math.floor(sec), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), r = String(s % 60).padStart(2, "0");
+      return h ? `${h}:${String(m).padStart(2, "0")}:${r}` : `${m}:${r}`; };
+
+    const iframe = $("mc");
+    iframe.src = "https://player-widget.mixcloud.com/widget/iframe/?hide_cover=1&mini=1&light=1&hide_artwork=1&disable_unload_warning=1&feed=" + encodeURIComponent(MIX);
+    const w = Mixcloud.PlayerWidget(iframe);
+    let duration = 0, playing = false;
+
+    const setIcon = () => { $("toggle").innerHTML = playing ? ICON_PAUSE : ICON_PLAY; $("toggle").ariaLabel = playing ? "Pausa" : "Play"; };
+    setIcon();
+
+    // El botón queda en "cargando" hasta que Mixcloud está listo; si no, el play se pierde
+    const startBtn = $("start"), startLabel = startBtn.lastChild;
+    startBtn.disabled = true; startLabel.textContent = " cargando…";
+
+    w.ready.then(() => {
+      startBtn.disabled = false; startLabel.textContent = " click to start";
+      w.getDuration().then((d) => { duration = d; $("time").textContent = `0:00 / ${fmt(d)}`; });
+      if (typeof w.setVolume !== "function") $("vol").remove();
+      w.events.play.on(() => { playing = true; setIcon(); iframe.classList.remove("fallback"); });
+      w.events.pause.on(() => { playing = false; setIcon(); });
+      w.events.ended.on(() => { playing = false; setIcon(); });
+      w.events.progress.on((pos, dur) => {
+        if (dur) duration = dur;
+        if (!duration) return;
+        $("time").textContent = `${fmt(pos)} / ${fmt(duration)}`;
+        $("bar").querySelector("span").style.width = (pos / duration * 100) + "%";
+      });
+    });
+
+    $("start").onclick = () => {
+      w.play();
+      $("intro").classList.add("hide");
+      $("player").classList.add("show");
+      setTimeout(() => { if (!playing) iframe.classList.add("fallback"); }, 2500);
+    };
+    $("toggle").onclick = () => w.togglePlay();
+    $("bar").onclick = (e) => { if (!duration) return; const r = e.currentTarget.getBoundingClientRect(); w.seek((e.clientX - r.left) / r.width * duration); };
+    $("vol").oninput = (e) => w.setVolume && w.setVolume(e.target.value / 100);
+  </script>
 </body>
 </html>

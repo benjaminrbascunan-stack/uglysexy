@@ -66,7 +66,8 @@
     #info .foto img { width: 100%; height: auto; display: block; }
     #info .foto.vertical { width: min(440px, 100%); }
     #info .foto figcaption { margin-top: 10px; font-size: 14px; opacity: .5; letter-spacing: .1em; }
-    #info .texto { max-width: 34em; font-size: 20px; line-height: 1.55; margin: 0; }
+    #info .texto { max-width: 34em; font-size: 20px; line-height: 1.55; margin: 0;
+      text-align: justify; text-align-last: left; hyphens: auto; -webkit-hyphens: auto; }
     #info .quienes { font-size: 15px; letter-spacing: .2em; line-height: 1.7; opacity: .6; margin: -32px 0 0; max-width: 30em; }
     #info .foto, #info .texto { opacity: 0; transform: translateY(14px); transition: opacity .9s ease, transform .9s ease; }
     #info.open .foto, #info.open .texto { opacity: 1; transform: none; }

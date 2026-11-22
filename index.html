@@ -179,6 +179,10 @@
     iframe.src = "https://player-widget.mixcloud.com/widget/iframe/?hide_cover=1&mini=1&light=1&hide_artwork=1&disable_unload_warning=1&feed=" + encodeURIComponent(MIX);
     const w = Mixcloud.PlayerWidget(iframe);
     let ready = false, wantPlay = false, duration = 0, playing = false, alive = false;
+    // inicio aleatorio: cada visita parte en otro punto del mix (evita el último 15%)
+    let startAt = null, picked = false, jumpTries = 0;
+    const pick = () => { if (!picked && duration > 0) { picked = true; startAt = Math.floor(Math.random() * duration * 0.85); } };
+    const jump = () => { pick(); if (startAt != null && jumpTries < 4) { jumpTries++; w.seek(startAt); } };
 
     const setIcon = () => {
       $("toggle").innerHTML = playing ? ICON_PAUSE : ICON_PLAY;
@@ -200,13 +204,16 @@
       w.getDuration().then((d) => { duration = d; $("time").textContent = `0:00 / ${fmt(d)}`; });
       if (typeof w.setVolume !== "function") $("vol").remove();
       const hideFallback = () => { alive = true; iframe.classList.remove("fallback"); };
-      w.events.play.on(() => { playing = true; setIcon(); hideFallback(); });
+      w.events.play.on(() => { playing = true; setIcon(); hideFallback(); if (!jumpTries) jump(); });
       w.events.buffering.on(hideFallback);
       w.events.pause.on(() => { playing = false; setIcon(); });
       w.events.ended.on(() => { playing = false; setIcon(); });
       w.events.progress.on((pos, dur) => {
         if (pos > 0) hideFallback();
+        if (startAt != null && jumpTries && pos < startAt - 10) jump();   // reintenta si el salto no tomó
+        else if (startAt != null && pos >= startAt - 10) startAt = null; // ya llegó
         if (dur) duration = dur;
+        if (!picked && playing && duration) jump();
         if (!duration) return;
         $("time").textContent = `${fmt(pos)} / ${fmt(duration)}`;
         $("bar").querySelector("span").style.width = (pos / duration * 100) + "%";
@@ -216,7 +223,7 @@
 
     // Logo: el primer click pone la música; el segundo abre las fotos e info del proyecto
     $("toggle").onclick = () => ready && w.togglePlay();
-    $("bar").onclick = (e) => { if (!duration) return; const r = e.currentTarget.getBoundingClientRect(); w.seek((e.clientX - r.left) / r.width * duration); };
+    $("bar").onclick = (e) => { if (!duration) return; startAt = null; const r = e.currentTarget.getBoundingClientRect(); w.seek((e.clientX - r.left) / r.width * duration); };
     $("vol").oninput = (e) => w.setVolume && w.setVolume(e.target.value / 100);
 
     // Menú: abre/cierra cada sección; click en el fondo o Esc vuelve al logo

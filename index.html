@@ -182,6 +182,10 @@
     // inicio aleatorio: cada visita parte en otro punto del mix (evita el último 15%)
     let startAt = null, picked = false, jumpTries = 0;
     const pick = () => { if (!picked && duration > 0) { picked = true; startAt = Math.floor(Math.random() * duration * 0.85); } };
+    // silencio mientras salta, para que no se escuche el inicio
+    let muted = false;
+    const mute = () => { if (w.setVolume && !muted) { muted = true; w.setVolume(0); } };
+    const unmute = () => { if (!muted) return; muted = false; const v = $("vol"); w.setVolume(v ? v.value / 100 : 1); };
     const jump = () => { pick(); if (startAt != null && jumpTries < 4) { jumpTries++; w.seek(startAt); } };
 
     const setIcon = () => {
@@ -194,7 +198,9 @@
       document.body.classList.add("started");
       $("logo").ariaLabel = "Ver fotos e info del proyecto";
       if (!ready) { wantPlay = true; return; }   // aún cargando: parte apenas esté listo
+      mute();
       w.play();
+      setTimeout(unmute, 6000);   // por si el salto nunca confirma
       // Respaldo solo si Mixcloud no da ninguna señal (bloqueado, típico de iPhone)
       setTimeout(() => { if (!alive) iframe.classList.add("fallback"); }, 6000);
     };
@@ -204,14 +210,14 @@
       w.getDuration().then((d) => { duration = d; $("time").textContent = `0:00 / ${fmt(d)}`; });
       if (typeof w.setVolume !== "function") $("vol").remove();
       const hideFallback = () => { alive = true; iframe.classList.remove("fallback"); };
-      w.events.play.on(() => { playing = true; setIcon(); hideFallback(); if (!jumpTries) jump(); });
+      w.events.play.on(() => { playing = true; setIcon(); hideFallback(); if (startAt === null && !picked) mute(); if (!jumpTries) jump(); });
       w.events.buffering.on(hideFallback);
       w.events.pause.on(() => { playing = false; setIcon(); });
       w.events.ended.on(() => { playing = false; setIcon(); });
       w.events.progress.on((pos, dur) => {
         if (pos > 0) hideFallback();
         if (startAt != null && jumpTries && pos < startAt - 10) jump();   // reintenta si el salto no tomó
-        else if (startAt != null && pos >= startAt - 10) startAt = null; // ya llegó
+        else if (startAt != null && pos >= startAt - 10) { startAt = null; unmute(); } // ya llegó
         if (dur) duration = dur;
         if (!picked && playing && duration) jump();
         if (!duration) return;
@@ -223,8 +229,8 @@
 
     // Logo: el primer click pone la música; el segundo abre las fotos e info del proyecto
     $("toggle").onclick = () => ready && w.togglePlay();
-    $("bar").onclick = (e) => { if (!duration) return; startAt = null; const r = e.currentTarget.getBoundingClientRect(); w.seek((e.clientX - r.left) / r.width * duration); };
-    $("vol").oninput = (e) => w.setVolume && w.setVolume(e.target.value / 100);
+    $("bar").onclick = (e) => { if (!duration) return; startAt = null; unmute(); const r = e.currentTarget.getBoundingClientRect(); w.seek((e.clientX - r.left) / r.width * duration); };
+    $("vol").oninput = (e) => { muted = false; w.setVolume && w.setVolume(e.target.value / 100); };
 
     // Menú: abre/cierra cada sección; click en el fondo o Esc vuelve al logo
     const navBtns = document.querySelectorAll("nav button");

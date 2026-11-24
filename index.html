@@ -179,9 +179,11 @@
     iframe.src = "https://player-widget.mixcloud.com/widget/iframe/?hide_cover=1&mini=1&light=1&hide_artwork=1&disable_unload_warning=1&feed=" + encodeURIComponent(MIX);
     const w = Mixcloud.PlayerWidget(iframe);
     let ready = false, wantPlay = false, duration = 0, playing = false, alive = false;
-    // inicio aleatorio: cada visita parte en otro punto del mix (evita el último 15%)
+    // inicio aleatorio: cada visita parte en uno de los drops
     let startAt = null, picked = false, jumpTries = 0;
-    const pick = () => { if (!picked && duration > 0) { picked = true; startAt = Math.floor(Math.random() * duration * 0.85); } };
+    // puntos de partida elegidos por ellos (drops): 0:00, 10:55, 17:45, 26:15, 27:55, 30:10, 32:45, 47:00, 58:30
+    const DROPS = [0, 655, 1065, 1575, 1675, 1810, 1965, 2820, 3510];
+    const pick = () => { if (!picked) { picked = true; startAt = DROPS[Math.floor(Math.random() * DROPS.length)]; } };
     // silencio mientras salta, para que no se escuche el inicio
     let muted = false;
     const mute = () => { if (w.setVolume && !muted) { muted = true; w.setVolume(0); } };
